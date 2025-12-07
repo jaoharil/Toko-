@@ -13,6 +13,7 @@ export const useCart = () => {
   const [wishlist, setWishlist] = useState<Product[]>([]);
 
   useEffect(() => {
+    // Hanya jalankan di browser
     if (typeof window !== 'undefined') {
       const savedCart = localStorage.getItem('cart');
       const savedWishlist = localStorage.getItem('wishlist');
@@ -22,11 +23,15 @@ export const useCart = () => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cart', JSON.stringify(cart));
+    }
   }, [cart]);
 
   useEffect(() => {
-    localStorage.setItem('wishlist', JSON.stringify(wishlist));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('wishlist', JSON.stringify(wishlist));
+    }
   }, [wishlist]);
 
   const addToCart = (product: Product) => {
@@ -40,27 +45,21 @@ export const useCart = () => {
   };
 
   const addToWishlist = (product: Product) => {
-    if (!wishlist.some((p) => p.id === product.id)) {
-      setWishlist([...wishlist, product]);
-    }
+    setWishlist((prev) => {
+      if (!prev.some((p) => p.id === product.id)) {
+        return [...prev, product];
+      }
+      return prev;
+    });
   };
 
-  const removeFromCart = (id: string) => {
-    setCart((prev) => prev.filter((item) => item.product.id !== id));
-  };
-
-  const clearCart = () => {
-    setCart([]);
-  };
+  const clearCart = () => setCart([]);
 
   return {
     cart,
     wishlist,
     addToCart,
     addToWishlist,
-    removeFromCart,
     clearCart,
-    setCart,
-    setWishlist,
   };
 };

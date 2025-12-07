@@ -1,39 +1,32 @@
 'use client';
 
 import Link from 'next/link';
-import { useCart } from '@/lib/useCart';
+import { useAuth } from '@/lib/auth';
+import { useCart } from '@/lib/useCart'; // ← tambahkan ini
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { FaShoppingCart, FaHeart, FaSearch } from 'react-icons/fa';
 import { categories } from '@/lib/products';
 
-/*************  ✨ Windsurf Command ⭐  *************/
-/**
- * Navbar component.
- *
- * This component displays the navigation bar of the website, including the
- * logo, search bar, navigation links, and login button.
- *
- * On mobile devices, the navigation links are hidden and can be
- * accessed by clicking the menu button.
- *
- * @returns {JSX.Element} The JSX element of the Navbar component.
- */
-/*******  867bb8b7-02ef-4481-bf3b-2d0eb31c0c6c  *******/export default function Navbar() {
-  const { cart, wishlist } = useCart();
+export default function Navbar() {
+  const { user, logout } = useAuth();
+  const { cart, wishlist } = useCart(); // ← ambil data keranjang & wishlist
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `/products?search=${encodeURIComponent(searchQuery.trim())}`;
+      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
+  // Hitung total item di keranjang
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <nav className="bg-white shadow sticky top-0 z-50">
+    <nav className="bg-white text-black shadow sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/" className="text-xl font-bold text-green-600">
           TokoKu
@@ -62,7 +55,8 @@ import { categories } from '@/lib/products';
           </Link>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-4">
+          {/* Search */}
           <form onSubmit={handleSearch} className="hidden md:flex items-center border rounded px-2">
             <input type="text" placeholder="Cari produk..." className="py-1 px-2 outline-none text-sm" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             <button type="submit" className="text-gray-500">
@@ -70,17 +64,37 @@ import { categories } from '@/lib/products';
             </button>
           </form>
 
-          <Link href="/wishlist" className="relative">
-            <FaHeart className="text-gray-700" />
-            {wishlist.length > 0 && <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">{wishlist.length}</span>}
+          {/* Wishlist Icon */}
+          <Link href="/wishlist" className="relative text-gray-700 hover:text-red-500">
+            <FaHeart size={18} />
+            {wishlist.length > 0 && <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full">{wishlist.length}</span>}
           </Link>
-          <Link href="/cart" className="relative">
-            <FaShoppingCart className="text-gray-700" />
-            {totalItems > 0 && <span className="absolute -top-2 -right-2 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">{totalItems}</span>}
+
+          {/* Keranjang Icon */}
+          <Link href="/cart" className="relative text-gray-700 hover:text-blue-500">
+            <FaShoppingCart size={18} />
+            {totalItems > 0 && <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full">{totalItems}</span>}
           </Link>
-          <Link href="/auth/login" className="bg-green-600 text-white px-3 py-1 rounded text-sm hidden md:block">
-            Masuk
-          </Link>
+
+          {/* Auth */}
+          {user ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm hidden md:block">Halo, {user.name}</span>
+              <button
+                onClick={() => {
+                  logout();
+                  router.refresh();
+                }}
+                className="text-red-600 text-sm hover:underline"
+              >
+                Keluar
+              </button>
+            </div>
+          ) : (
+            <Link href="/auth/login" className="bg-green-600 text-white px-3 py-1 rounded text-sm hidden md:block">
+              Masuk
+            </Link>
+          )}
         </div>
 
         <button className="md:hidden text-gray-700" onClick={() => setIsMenuOpen(!isMenuOpen)}>
@@ -90,7 +104,7 @@ import { categories } from '@/lib/products';
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-gray-50 px-4 py-2 flex flex-col space-y-2">
+        <div className="md:hidden text-black bg-gray-50 px-4 py-2 flex flex-col space-y-2">
           <Link href="/" onClick={() => setIsMenuOpen(false)}>
             Beranda
           </Link>
@@ -110,9 +124,33 @@ import { categories } from '@/lib/products';
           <Link href="/faq" onClick={() => setIsMenuOpen(false)}>
             FAQ
           </Link>
-          <Link href="/auth/login" className="bg-green-600 text-white px-4 py-2 rounded mt-2 text-center">
-            Masuk
-          </Link>
+
+          {/* Mobile: Icon keranjang & wishlist */}
+          <div className="flex gap-4 pt-2">
+            <Link href="/wishlist" onClick={() => setIsMenuOpen(false)} className="text-gray-700">
+              <FaHeart size={20} />
+            </Link>
+            <Link href="/cart" onClick={() => setIsMenuOpen(false)} className="text-gray-700">
+              <FaShoppingCart size={20} />
+            </Link>
+          </div>
+
+          {user ? (
+            <button
+              onClick={() => {
+                logout();
+                setIsMenuOpen(false);
+                router.refresh();
+              }}
+              className="text-red-600 text-left mt-2"
+            >
+              Keluar
+            </button>
+          ) : (
+            <Link href="/auth/login" className="bg-green-600 text-white px-4 py-2 rounded mt-2 text-center" onClick={() => setIsMenuOpen(false)}>
+              Masuk
+            </Link>
+          )}
         </div>
       )}
     </nav>
